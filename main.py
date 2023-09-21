@@ -35,8 +35,14 @@ agent_chain, llm = initialize_app()
 # Cache the SERP API call
 @st.cache_resource(show_spinner=False)
 def get_latest_info(company_prompt):
-    basic_info = agent_chain.run(f"Provide a detailed analysis of the company, {company_prompt}")
-    exec_team_info = agent_chain.run(f"Provide information on the top executives at the company, {company_prompt} and its headcount")
+    # Refine the prompt for a more targeted and concise search.
+    basic_info_prompt = f"Provide a comprehensive overview and current analysis of the company named {company_prompt}."
+    basic_info = agent_chain.run(basic_info_prompt)
+    
+    # Make the prompt more directive for precise results.
+    exec_team_info_prompt = f"List the top executives and the total headcount of the company named {company_prompt}."
+    exec_team_info = agent_chain.run(exec_team_info_prompt)
+    
     combined_info = f"{basic_info}\n\n{exec_team_info}"
     return combined_info
 
@@ -162,7 +168,6 @@ with main_col:
 
     user_notes = st.text_area('Add Your Personal Notes About the Company Here:')
 
-
     # Prompt templates
     research_template = PromptTemplate(
         input_variables = ['company'],
@@ -171,7 +176,7 @@ with main_col:
 
     memo_template = PromptTemplate(
         input_variables = ['company'],
-        template='As an experienced investor with deep experience in private equity and venture capital, write me a detailed investment analysis about the company, {company}. This report should, at a minimum, have the following sections: Summary, Product Evaluation, Market Opportunity, Financials & Unit Economics, Executive Team, Risks'
+        template='As an experienced investor with deep experience in private equity and venture capital, write a detailed investment analysis about the company, {company}. This report should, at a minimum, have the following sections: Summary, Product Evaluation, Market Opportunity, Financials & Unit Economics, Executive Team, Risks'
     )
 
     notes_template = PromptTemplate(
