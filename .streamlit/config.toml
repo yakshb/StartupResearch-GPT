@@ -1,0 +1,7 @@
+[theme]
+base="dark"
+primaryColor="#6D83F2"              # Lavender Blue
+backgroundColor="#1E1E2F"          # Midnight Blue
+secondaryBackgroundColor="#4A4A6E" # Slate Blue
+textColor="#EDEDED"                # Light Gray
+font="sans serif"
