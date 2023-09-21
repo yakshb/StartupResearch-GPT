@@ -170,18 +170,18 @@ with main_col:
 
     # Prompt templates
     research_template = PromptTemplate(
-        input_variables = ['company'],
-        template='Evaluate the value proposition, product or service, business model, market opportunity, executive team, financials, and technology-related information about the company, {company}. Keep your answers technical and based on facts – do not hallucinate features.'
+        input_variables=['company'],
+        template='You are an expert in startup evaluation. For the company named {company}, provide a detailed technical analysis covering the following areas: \n\n- Value Proposition\n- Product or Service\n- Business Model\n- Market Opportunity\n- Executive Team\n- Financials\n- Technology\n\nEnsure your answers are factual, data-driven, and avoid speculating on non-existent features.'
     )
 
     memo_template = PromptTemplate(
-        input_variables = ['company'],
-        template='As an experienced investor with deep experience in private equity and venture capital, write a detailed investment analysis about the company, {company}. This report should, at a minimum, have the following sections: Summary, Product Evaluation, Market Opportunity, Financials & Unit Economics, Executive Team, Risks'
+        input_variables=['company'],
+        template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, craft a comprehensive investment analysis report. The report should be structured in markdown with appropriate headings as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
     )
 
     notes_template = PromptTemplate(
-        input_variables = ['notes'],
-        template='Evaluate the {notes} provided in the context of evaluating a company or startup as an investment'
+        input_variables=['notes'],
+        template='Given the notes: {notes}, evaluate them from the perspective of an investment analyst. Consider the implications, strengths, weaknesses, and potential risks associated with the company or startup mentioned in the notes. Provide a structured assessment.'
     )
 
     research_chain = LLMChain(llm=llm, prompt=research_template)
