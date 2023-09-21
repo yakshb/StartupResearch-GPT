@@ -35,22 +35,30 @@ agent_chain, llm = initialize_app()
 # Cache the SERP API call
 @st.cache_resource(show_spinner=False)
 def get_latest_info(company_prompt):
-    # Refine the prompt for a more targeted and concise search.
-    basic_info_prompt = f"Provide a comprehensive overview and current analysis of the company named {company_prompt}."
-    basic_info = agent_chain.run(basic_info_prompt)
-    
-    # Make the prompt more directive for precise results.
-    exec_team_info_prompt = f"List the top executives and the total headcount of the company named {company_prompt}."
-    exec_team_info = agent_chain.run(exec_team_info_prompt)
-    
-    combined_info = f"{basic_info}\n\n{exec_team_info}"
-    return combined_info
+    try:
+        # Refine the prompt for a more targeted and concise search.
+        basic_info_prompt = f"Provide a current analysis of the startup or company named {company_prompt}."
+        basic_info = agent_chain.run(basic_info_prompt)
+        
+        # Make the prompt more directive for precise results.
+        exec_team_info_prompt = f"List the top executives of the startup or company named {company_prompt}."
+        exec_team_info = agent_chain.run(exec_team_info_prompt)
+        
+        combined_info = f"{basic_info}\n\n{exec_team_info}"
+        return combined_info
+
+    except Exception as e:
+        # Log the error for debugging purposes
+        st.error(f"An error occurred: {e}")
+        
+        # Return a default message or handle the error as per your requirements
+        return "An error occurred while fetching the information. Please try again later."
 
 # Cache the LLM responses
 @st.cache_resource(show_spinner=False)
 def generate_research(company_prompt, latest_info):
     notes = {"notes": latest_info}
-    sequential_chain = SimpleSequentialChain(chains=[research_chain, notes_chain, memo_chain], verbose=True)
+    sequential_chain = SimpleSequentialChain(chains=[notes_chain, research_chain, memo_chain], verbose=True)
     return sequential_chain.run(company_prompt)
 
 # @st.cache_resource(show_spinner=False)
@@ -176,7 +184,7 @@ with main_col:
 
     memo_template = PromptTemplate(
         input_variables=['company'],
-        template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, craft a comprehensive investment analysis report. The report should be structured in markdown with appropriate headings as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
+        template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, craft a comprehensive investment analysis report. The report should be structured in markdown as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
     )
 
     notes_template = PromptTemplate(
@@ -192,7 +200,7 @@ with main_col:
         latest_info = get_latest_info(company_prompt)
 
     # Display LLM answers
-    if st.button(f'Generate Investment Research'):
+    if st.button(f'Generate Research'):
             with st.spinner(f'Generating Research for {company_prompt}... This could take 1-2 mins'):
                 response = generate_research(company_prompt, latest_info)
                 st.markdown(response)
