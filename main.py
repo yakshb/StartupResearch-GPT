@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from PIL import Image
 import streamlit as st
 from llama_index.llms import OpenAI
 # from llama_index import VectorStoreIndex, SimpleDirectoryReader, load_index_from_storage, StorageContext, ServiceContext, LLMPredictor
@@ -34,7 +35,7 @@ agent_chain, llm = initialize_app()
 
 # Cache the SERP API call
 @st.cache_resource(show_spinner=False)
-def get_latest_info(company_prompt):
+def get_latest_info(company_prompt, llmmodel_input, llmtemperature_input):
     try:
         # Refine the prompt for a more targeted and concise search.
         basic_info_prompt = f"Provide a current analysis of the startup or company named {company_prompt}."
@@ -54,9 +55,10 @@ def get_latest_info(company_prompt):
         # Return a default message or handle the error as per your requirements
         return "An error occurred while fetching the information. Please try again later."
 
+
 # Cache the LLM responses
 @st.cache_resource(show_spinner=False)
-def generate_research(company_prompt, latest_info):
+def generate_research(company_prompt, latest_info, llmmodel_input, llmtemperature_input):
     notes = {"notes": latest_info}
     sequential_chain = SimpleSequentialChain(chains=[notes_chain, research_chain, memo_chain], verbose=True)
     return sequential_chain.run(company_prompt)
@@ -82,6 +84,8 @@ home_title = "Finsights"
 home_introduction = "Where researching and investing in startups meets the prowess of OpenAI's LLM technology. Powered by #Langchain & #LlamaIndex, Bringing OpenAI's prowess to your fingertips to generate detailed investment memos and company insights to supercharge your research."
 home_privacy = "We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private."
 home_icon="https://api.dicebear.com/7.x/icons/svg?seed=Abby&backgroundColor=80cbc4&icon=cashCoin,coin,eyeglasses,newspaper"
+site_logo = Image.open('assets/finsight_logo2.png')
+
 
 st.set_page_config(
     page_title="Startup Review (with Langchain + LlamaIndex)",
@@ -116,8 +120,8 @@ with st.sidebar:
     st.write("Made with 🦜️🔗 Langchain and 🦙 LlamaIndex")
 
 #st.title(home_title)
-st.markdown(f"""## VC/Startup Research Assistant⚡ <span style=color:#2E9BF5><font size=6>Beta</font></span>""",unsafe_allow_html=True)
-st.markdown(f"#### Powered by Langchain and LlamaIndex")
+st.image(site_logo, width=500)
+st.markdown(f"#### ⚡Powered by Langchain and LlamaIndex")
 
 with st.expander("What is this app about?", expanded=True):
     st.info("""
@@ -157,7 +161,9 @@ with st.expander("How does it work?"):
 with st.expander("Will my data be private?"):
     st.info(f"{home_privacy}")
 
+
 st.divider()
+st.markdown(f"""## Startup Research Assistant <span style=color:#2E9BF5><font size=5>Beta</font></span>""",unsafe_allow_html=True)
 
 main_col, history_col = st.columns([3,1])
 with main_col:
@@ -179,7 +185,7 @@ with main_col:
     # Prompt templates
     research_template = PromptTemplate(
         input_variables=['company'],
-        template='You are an expert in startup evaluation. For the company named {company}, provide a detailed technical analysis covering the following areas: \n\n- Value Proposition\n- Product or Service\n- Business Model\n- Market Opportunity\n- Executive Team\n- Financials\n- Technology\n\nEnsure your answers are factual, data-driven, and avoid speculating on non-existent features.'
+        template='You are an expert in startup evaluation. For the company named {company}, provide a detailed technical analysis covering the following areas: \n\n- Value Proposition\n- Product or Service\n- Business Model\n- Market Opportunity\n- Executive Team\n- Financials\n- Technology\n\nEnsure your answers are factual, data-driven, and avoid speculating on non-existent features. Your answers should be critically analyzed and balanced, weighing both the strengths and weaknesses of each segment.'
     )
 
     memo_template = PromptTemplate(
@@ -197,12 +203,12 @@ with main_col:
     notes_chain = LLMChain(llm=llm, prompt=notes_template)
 
     if company_prompt:
-        latest_info = get_latest_info(company_prompt)
+        latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
 
     # Display LLM answers
     if st.button(f'Generate Research'):
             with st.spinner(f'Generating Research for {company_prompt}... This could take 1-2 mins'):
-                response = generate_research(company_prompt, latest_info)
+                response = generate_research(company_prompt, latest_info, llmmodel_input, llmtemperature_input)
                 st.markdown(response)
                 st.download_button('Download Report', response, file_name=f'Finsights Research - {company_prompt}.doc')
 
