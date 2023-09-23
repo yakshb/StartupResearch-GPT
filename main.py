@@ -83,13 +83,13 @@ def generate_research(company_prompt, latest_info, llmmodel_input, llmtemperatur
 home_title = "Finsights"
 home_introduction = "Where researching and investing in startups meets the prowess of OpenAI's LLM technology. Powered by #Langchain & #LlamaIndex, Bringing OpenAI's prowess to your fingertips to generate detailed investment memos and company insights to supercharge your research."
 home_privacy = "We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private."
-home_icon="https://api.dicebear.com/7.x/icons/svg?seed=Abby&backgroundColor=80cbc4&icon=cashCoin,coin,eyeglasses,newspaper"
-site_logo = Image.open('assets/finsight_logo2.png')
+home_icon=Image.open('assets/site_thumbnail.png')
+home_logo = Image.open('assets/finsight_logo2.png')
 
 
 st.set_page_config(
-    page_title="Startup Review (with Langchain + LlamaIndex)",
-    page_icon="https://api.dicebear.com/7.x/icons/svg?seed=Abby&backgroundColor=80cbc4&icon=cashCoin,coin,eyeglasses,newspaper",
+    page_title="Finsights.AI",
+    page_icon=home_icon,
     layout="wide",
     menu_items={"About": "Powered by #Langchain & #LlamaIndex, Bringing OpenAI's prowess to your fingertips to generate detailed memos or company insights in seconds. Input company info & get a detailed investment memo.", "Get help": None, "Report a Bug": None}
 )
@@ -120,7 +120,7 @@ with st.sidebar:
     st.write("Made with 🦜️🔗 Langchain and 🦙 LlamaIndex")
 
 #st.title(home_title)
-st.image(site_logo, width=500)
+st.image(home_logo, width=500)
 st.markdown(f"#### ⚡Powered by Langchain and LlamaIndex")
 
 with st.expander("What is this app about?", expanded=True):
@@ -190,7 +190,7 @@ with main_col:
 
     memo_template = PromptTemplate(
         input_variables=['company'],
-        template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, craft a comprehensive investment analysis report. The report should be structured in markdown as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
+        template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, critically analyze and craft a comprehensive investment analysis report. The report should be structured in markdown as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
     )
 
     notes_template = PromptTemplate(
