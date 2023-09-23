@@ -37,31 +37,35 @@ agent_chain, llm = initialize_app()
 @st.cache_resource(show_spinner=False)
 def get_latest_info(company_prompt, llmmodel_input, llmtemperature_input):
     try:
-        # Refine the prompt for a more targeted and concise search.
         basic_info_prompt = f"Provide a current analysis of the startup or company named {company_prompt}."
         basic_info = agent_chain.run(basic_info_prompt)
         
-        # Make the prompt more directive for precise results.
         exec_team_info_prompt = f"List the top executives of the startup or company named {company_prompt}."
         exec_team_info = agent_chain.run(exec_team_info_prompt)
         
-        combined_info = f"{basic_info}\n\n{exec_team_info}"
-        return combined_info
+        return {
+            "company_info": basic_info,
+            "exec_team_info": exec_team_info
+        }
 
     except Exception as e:
-        # Log the error for debugging purposes
         st.error(f"An error occurred: {e}")
-        
-        # Return a default message or handle the error as per your requirements
-        return "An error occurred while fetching the information. Please try again later."
+        return {
+            "company_info": "An error occurred while fetching the company information. Please try again later.",
+            "exec_team_info": "An error occurred while fetching the executive team information. Please try again later."
+        }
 
-
-# Cache the LLM responses
 @st.cache_resource(show_spinner=False)
-def generate_research(company_prompt, latest_info, llmmodel_input, llmtemperature_input):
-    notes = {"notes": latest_info}
-    sequential_chain = SimpleSequentialChain(chains=[notes_chain, research_chain, memo_chain], verbose=True)
-    return sequential_chain.run(company_prompt)
+def generate_research(company_prompt, latest_info, user_notes):
+    notes = {
+        "input": company_prompt,
+        "company_info": latest_info["company_info"],
+        "exec_team_info": latest_info["exec_team_info"],
+        "user_notes": user_notes,
+        "company": company_prompt  # This is for the research and memo chains
+    }
+    sequential_chain = SimpleSequentialChain(chains=[company_info_chain, exec_team_info_chain, notes_chain, research_chain, memo_chain], verbose=True)
+    return sequential_chain.run(notes)
 
 # @st.cache_resource(show_spinner=False)
 # def get_latest_info(company_prompt):
@@ -123,7 +127,7 @@ with st.sidebar:
 st.image(home_logo, width=500)
 st.markdown(f"#### ⚡Powered by Langchain and LlamaIndex")
 
-with st.expander("What is this app about?", expanded=True):
+with st.expander("❔What is this app about?", expanded=True):
     st.info("""
     Welcome to Finsights.AI, an AI-powered assistant designed to enhance your startup and VC research!
 
@@ -139,7 +143,7 @@ with st.expander("What is this app about?", expanded=True):
     
     """, icon="ℹ️")
 
-with st.expander("How does it work?"):
+with st.expander("🛠️ How does it work?"):
     st.info("""
 
     Finsights.AI employs sophisticated Large Language Models (LLMs) and AI agents to craft extensive research reports on startups or companies. Here's the process:
@@ -158,16 +162,18 @@ with st.expander("How does it work?"):
 
     """, icon="ℹ️")
 
-with st.expander("Will my data be private?"):
+with st.expander("🛡️ Will my data be private?"):
     st.info(f"{home_privacy}")
 
 
 st.divider()
 st.markdown(f"""## Startup Research Assistant <span style=color:#2E9BF5><font size=5>Beta</font></span>""",unsafe_allow_html=True)
 
+if 'history' not in st.session_state:
+    st.session_state.history = []
+
 main_col, history_col = st.columns([3,1])
 with main_col:
-    # with col1:
     company_prompt = st.text_input('**Enter the Startup / Company Name Here:**')
 
     with st.expander("Advanced Filters (Testing)"):
@@ -193,27 +199,74 @@ with main_col:
         template='Imagine you are a seasoned investor with extensive expertise in both private equity and venture capital. For the company named {company}, critically analyze and craft a comprehensive investment analysis report. The report should be structured in markdown as follows:\n\n1. Summary Analysis\n2. Product Evaluation\n3. Market Opportunity\n4. Financials & Unit Economics\n5. Executive Team\n6. Technology\n7. Risks\n\nYour analysis should be in-depth, analytical, and make extensive use of metrics and data points.'
     )
 
-    notes_template = PromptTemplate(
-        input_variables=['notes'],
-        template='Given the notes: {notes}, evaluate them from the perspective of an investment analyst. Consider the implications, strengths, weaknesses, and potential risks associated with the company or startup mentioned in the notes. Provide a structured assessment.'
+    # Template for company_info
+    company_info_template = PromptTemplate(
+        input_variables=['company_info'],
+        template='Given the latest information about the company: {company_info}, evaluate it from the perspective of an investment analyst. Consider the implications, strengths, weaknesses, and potential risks associated with the company or startup mentioned.'
     )
 
+    # Template for exec_team_info
+    exec_team_info_template = PromptTemplate(
+        input_variables=['exec_team_info'],
+        template='Given the information about the executive team: {exec_team_info}, evaluate it from the perspective of an investment analyst. Consider the strengths, weaknesses, and potential risks associated with the executive team of the company or startup mentioned.'
+    )
+
+    # Updated notes_template to only comprehend user's notes
+    notes_template = PromptTemplate(
+        input_variables=['user_notes'],
+        template="Given the user's notes: {user_notes}, evaluate them from the perspective of an investment analyst. Consider the implications, strengths, weaknesses, and potential risks associated with the company or startup mentioned in the notes."
+    )
+
+    # notes_template = PromptTemplate(
+    #     input_variables=['company_info', 'exec_team_info', 'user_notes'],
+    #     template="""
+    #     Given the latest information about the company: {company_info} 
+    #     and the executive team: {exec_team_info}, 
+    #     along with the user's notes: {user_notes}, 
+    #     evaluate them from the perspective of an investment analyst. 
+    #     Consider the implications, strengths, weaknesses, and potential risks associated with the company or startup mentioned. 
+        
+    #     Provide a structured assessment."""
+    # )
+
+    company_info_chain = LLMChain(llm=llm, prompt=company_info_template)
+    exec_team_info_chain = LLMChain(llm=llm, prompt=exec_team_info_template)
     research_chain = LLMChain(llm=llm, prompt=research_template)
     memo_chain = LLMChain(llm=llm, prompt=memo_template)
     notes_chain = LLMChain(llm=llm, prompt=notes_template)
 
-    # if company_prompt:
-    #     latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
+    # Check if the current response is in session_state, if not initialize it
+    if 'current_response' not in st.session_state:
+        st.session_state.current_response = ""
 
     # Display LLM answers
     if company_prompt and st.button(f'Generate Research'):
-            with st.spinner(f'Generating Research for {company_prompt}... This could take 1-2 mins'):
-                latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
-                response = generate_research(company_prompt, latest_info, llmmodel_input, llmtemperature_input)
-                st.markdown(response)
-                st.download_button('🗒️ Download Report', response, file_name=f'Finsights Research - {company_prompt}.doc')
+        with st.spinner(f'Generating Research for {company_prompt}... This could take 1-2 mins'):
+            latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
+            response = generate_research(company_prompt, latest_info, user_notes)
+            
+            # Store the current response in session_state
+            st.session_state.current_response = response
+
+            st.download_button('🗒️ Download Report', response, file_name=f'Finsights Research - {company_prompt}.doc')
+
+            # Append the research to the session state history
+            st.session_state.history.append({
+                "company": company_prompt,
+                "research": response
+            })
+
+    # Display the current response outside the button click condition
+    if st.session_state.current_response:
+        st.markdown(st.session_state.current_response)
+
 
 with history_col:
     with st.expander("**Research History**"):
-        st.info("Coming Soon")
+        if st.session_state.history:
+            for idx, item in enumerate(st.session_state.history):
+                if st.button(f"Review: {item['company']}", key=f"btn_{idx}"):
+                    st.session_state.current_response = item['research']
+        else:
+            st.info("No research history available.")
 
