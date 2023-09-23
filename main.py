@@ -125,9 +125,9 @@ st.markdown(f"#### ⚡Powered by Langchain and LlamaIndex")
 
 with st.expander("What is this app about?", expanded=True):
     st.info("""
-    Welcome to the AI-powered Startup Analyzer!
+    Welcome to Finsights.AI, an AI-powered assistant designed to enhance your startup and VC research!
 
-    Designed for angel investors, analysts, and VCs, this application offers a seamless way to generate in-depth investment research on any company, whether public or private. Key features include:
+    Made for angel investors, analysts, and VCs, Finsights.AI offers a seamless way to generate in-depth investment research on any company, whether public or private. Key features include:
 
     1. **Deep Analysis**: Harnessing the power of AI, the app delves into the web, extracting the latest and most pertinent data about your chosen company.
     
@@ -142,7 +142,7 @@ with st.expander("What is this app about?", expanded=True):
 with st.expander("How does it work?"):
     st.info("""
 
-    The Startup Analyzer employs sophisticated Large Language Models (LLMs) to craft extensive research reports on startups or companies. Here's the process:
+    Finsights.AI employs sophisticated Large Language Models (LLMs) and AI agents to craft extensive research reports on startups or companies. Here's the process:
 
     1. **User Input**: Begin by entering the name of a startup or company you wish to investigate. You can also incorporate your personal "field notes" to enhance the AI's output.
     
@@ -176,7 +176,7 @@ with main_col:
             llm_model_options = ['gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k','gpt-3.5-turbo']  # Add more models if available
             llmmodel_input = st.selectbox('Select LLM Model:', llm_model_options, index=0)
         with col2:
-            llmtemperature_input = st.slider('Set AI Randomness / Creativity', min_value=0.1, max_value=1.0, value=0.6)
+            llmtemperature_input = st.slider('Set AI Randomness / Creativity', min_value=0.0, max_value=1.0, value=0.6)
         
     agent_chain, llm = initialize_app(model_name=llmmodel_input, temperature=llmtemperature_input)
 
@@ -202,15 +202,16 @@ with main_col:
     memo_chain = LLMChain(llm=llm, prompt=memo_template)
     notes_chain = LLMChain(llm=llm, prompt=notes_template)
 
-    if company_prompt:
-        latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
+    # if company_prompt:
+    #     latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
 
     # Display LLM answers
-    if st.button(f'Generate Research'):
+    if company_prompt and st.button(f'Generate Research'):
             with st.spinner(f'Generating Research for {company_prompt}... This could take 1-2 mins'):
+                latest_info = get_latest_info(company_prompt, llmmodel_input, llmtemperature_input)
                 response = generate_research(company_prompt, latest_info, llmmodel_input, llmtemperature_input)
                 st.markdown(response)
-                st.download_button('Download Report', response, file_name=f'Finsights Research - {company_prompt}.doc')
+                st.download_button('🗒️ Download Report', response, file_name=f'Finsights Research - {company_prompt}.doc')
 
 with history_col:
     with st.expander("**Research History**"):
